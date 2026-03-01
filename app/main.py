@@ -1,16 +1,17 @@
 from contextlib import asynccontextmanager
 
-import app.models  # noqa: F401 — ensure all models are registered
+import app.models  # noqa: F401
 from fastapi import FastAPI
 
-from app.database import engine, Base
-from app.routers import auth, companies, groups, roles, settings, users
+from app.database import engine
+from app.routers import (
+    auth, companies, groups, roles,
+    settings as settings_router, users,
+)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
     yield
     await engine.dispose()
 
@@ -21,9 +22,21 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-app.include_router(auth.router, prefix="/api/v1")
-app.include_router(users.router, prefix="/api/v1")
-app.include_router(companies.router, prefix="/api/v1")
-app.include_router(groups.router, prefix="/api/v1")
-app.include_router(roles.router, prefix="/api/v1")
-app.include_router(settings.router, prefix="/api/v1")
+app.include_router(
+    auth.router, prefix="/api/v1",
+)
+app.include_router(
+    users.router, prefix="/api/v1",
+)
+app.include_router(
+    companies.router, prefix="/api/v1",
+)
+app.include_router(
+    groups.router, prefix="/api/v1",
+)
+app.include_router(
+    roles.router, prefix="/api/v1",
+)
+app.include_router(
+    settings_router.router, prefix="/api/v1",
+)
