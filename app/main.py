@@ -3,6 +3,8 @@ from contextlib import asynccontextmanager
 import app.models  # noqa: F401
 from fastapi import FastAPI
 
+from app.cache import close_redis, init_redis
+from app.config import settings
 from app.database import engine
 from app.routers import (
     auth, companies, groups, roles,
@@ -12,7 +14,9 @@ from app.routers import (
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    await init_redis(settings.redis_url)
     yield
+    await close_redis()
     await engine.dispose()
 
 

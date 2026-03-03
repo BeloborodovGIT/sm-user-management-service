@@ -2,8 +2,8 @@ from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import get_superuser
+from app.cache import CachedUser
 from app.database import get_db
-from app.models.user import User
 from app.schemas.group import GroupCreate, GroupResponse, GroupUpdate
 from app.services.group_service import GroupService
 
@@ -22,7 +22,7 @@ def get_service(session: AsyncSession = Depends(get_db)) -> GroupService:
 async def create_group(
     data: GroupCreate,
     service: GroupService = Depends(get_service),
-    _: User = Depends(get_superuser),
+    _: CachedUser = Depends(get_superuser),
 ):
     return await service.create_group(data)
 
@@ -33,7 +33,7 @@ async def list_groups(
     offset: int = Query(default=0, ge=0),
     limit: int = Query(default=100, ge=1, le=1000),
     service: GroupService = Depends(get_service),
-    _: User = Depends(get_superuser),
+    _: CachedUser = Depends(get_superuser),
 ):
     return await service.get_groups(
         company_id=company_id, offset=offset, limit=limit,
@@ -44,7 +44,7 @@ async def list_groups(
 async def get_group(
     group_id: int,
     service: GroupService = Depends(get_service),
-    _: User = Depends(get_superuser),
+    _: CachedUser = Depends(get_superuser),
 ):
     return await service.get_group(group_id)
 
@@ -54,7 +54,7 @@ async def update_group(
     group_id: int,
     data: GroupUpdate,
     service: GroupService = Depends(get_service),
-    _: User = Depends(get_superuser),
+    _: CachedUser = Depends(get_superuser),
 ):
     return await service.update_group(group_id, data)
 
@@ -63,6 +63,6 @@ async def update_group(
 async def delete_group(
     group_id: int,
     service: GroupService = Depends(get_service),
-    _: User = Depends(get_superuser),
+    _: CachedUser = Depends(get_superuser),
 ):
     await service.delete_group(group_id)

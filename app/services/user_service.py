@@ -3,6 +3,10 @@ import datetime
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.cache import (
+    invalidate_superuser,
+    invalidate_user,
+)
 from app.models.user import User, UserRole
 from app.repositories.user_repository import UserRepository
 from app.schemas.role import UserRoleCreate
@@ -45,21 +49,31 @@ class UserService:
         )
         return await self.repo.create(user)
 
-    async def update_user(self, user_id: int, data: UserUpdate) -> User:
+    async def update_user(
+        self, user_id: int, data: UserUpdate,
+    ) -> User:
         user = await self.get_user(user_id)
-        for field, value in data.model_dump(exclude_unset=True).items():
+        for field, value in data.model_dump(
+            exclude_unset=True,
+        ).items():
             setattr(user, field, value)
-        return await self.repo.update(user)
+        result = await self.repo.update(user)
+        await invalidate_user(user_id)
+        return result
 
     async def delete_user(self, user_id: int) -> None:
         user = await self.get_user(user_id)
         await self.repo.delete(user)
+        await invalidate_user(user_id)
+        await invalidate_superuser(user_id)
 
     async def get_roles(self, user_id: int) -> list[UserRole]:
         await self.get_user(user_id)
         return await self.repo.get_roles(user_id)
 
-    async def assign_role(self, user_id: int, data: UserRoleCreate) -> UserRole:
+    async def assign_role(
+        self, user_id: int, data: UserRoleCreate,
+    ) -> UserRole:
         await self.get_user(user_id)
         role = UserRole(
             user_id=user_id,
@@ -67,4 +81,6 @@ class UserService:
             active_from=data.active_from,
             active_to=data.active_to,
         )
-        return await self.repo.add_role(role)
+        result = await self.repo.add_role(role)
+        await invalidate_superuser(user_id)
+        return result

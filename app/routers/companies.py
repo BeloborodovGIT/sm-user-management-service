@@ -1,9 +1,11 @@
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.dependencies import get_own_company_or_superuser, get_superuser
+from app.auth.dependencies import (
+    get_own_company_or_superuser, get_superuser,
+)
+from app.cache import CachedUser
 from app.database import get_db
-from app.models.user import User
 from app.schemas.company import CompanyCreate, CompanyResponse, CompanyUpdate
 from app.services.company_service import CompanyService
 
@@ -30,7 +32,7 @@ async def list_companies(
     offset: int = Query(default=0, ge=0),
     limit: int = Query(default=100, ge=1, le=1000),
     service: CompanyService = Depends(get_service),
-    _: User = Depends(get_superuser),
+    _: CachedUser = Depends(get_superuser),
 ):
     return await service.get_companies(offset=offset, limit=limit)
 
@@ -39,7 +41,7 @@ async def list_companies(
 async def get_company(
     company_id: int,
     service: CompanyService = Depends(get_service),
-    _: User = Depends(get_own_company_or_superuser),
+    _: CachedUser = Depends(get_own_company_or_superuser),
 ):
     return await service.get_company(company_id)
 
@@ -49,7 +51,7 @@ async def update_company(
     company_id: int,
     data: CompanyUpdate,
     service: CompanyService = Depends(get_service),
-    _: User = Depends(get_superuser),
+    _: CachedUser = Depends(get_superuser),
 ):
     return await service.update_company(company_id, data)
 
@@ -58,6 +60,6 @@ async def update_company(
 async def delete_company(
     company_id: int,
     service: CompanyService = Depends(get_service),
-    _: User = Depends(get_superuser),
+    _: CachedUser = Depends(get_superuser),
 ):
     await service.delete_company(company_id)

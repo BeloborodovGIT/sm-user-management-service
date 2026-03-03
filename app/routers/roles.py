@@ -2,8 +2,8 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import get_superuser
+from app.cache import CachedUser
 from app.database import get_db
-from app.models.user import User
 from app.schemas.role import (
     RoleFunctionCreate, RoleFunctionResponse, RoleResponse,
 )
@@ -19,7 +19,7 @@ def get_service(session: AsyncSession = Depends(get_db)) -> RoleService:
 @router.get("/", response_model=list[RoleResponse])
 async def list_roles(
     service: RoleService = Depends(get_service),
-    _: User = Depends(get_superuser),
+    _: CachedUser = Depends(get_superuser),
 ):
     return await service.get_roles()
 
@@ -28,7 +28,7 @@ async def list_roles(
 async def get_role(
     role_id: int,
     service: RoleService = Depends(get_service),
-    _: User = Depends(get_superuser),
+    _: CachedUser = Depends(get_superuser),
 ):
     return await service.get_role(role_id)
 
@@ -37,7 +37,7 @@ async def get_role(
 async def get_role_functions(
     role_id: int,
     service: RoleService = Depends(get_service),
-    _: User = Depends(get_superuser),
+    _: CachedUser = Depends(get_superuser),
 ):
     return await service.get_role_functions(role_id)
 
@@ -51,7 +51,7 @@ async def add_function_to_role(
     role_id: int,
     data: RoleFunctionCreate,
     service: RoleService = Depends(get_service),
-    _: User = Depends(get_superuser),
+    _: CachedUser = Depends(get_superuser),
 ):
     return await service.add_function(role_id, data)
 
@@ -64,6 +64,6 @@ async def remove_function_from_role(
     role_id: int,
     function_id: int,
     service: RoleService = Depends(get_service),
-    _: User = Depends(get_superuser),
+    _: CachedUser = Depends(get_superuser),
 ):
     await service.remove_function(role_id, function_id)

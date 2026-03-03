@@ -6,8 +6,8 @@ from app.auth.dependencies import (
     get_self_or_superuser,
     get_superuser,
 )
+from app.cache import CachedUser
 from app.database import get_db
-from app.models.user import User
 from app.schemas.role import UserRoleCreate, UserRoleResponse
 from app.schemas.user import UserRegister, UserResponse, UserUpdate
 from app.services.user_service import UserService
@@ -31,7 +31,7 @@ def get_service(session: AsyncSession = Depends(get_db)) -> UserService:
 async def register_user(
     data: UserRegister,
     service: UserService = Depends(get_service),
-    _: User = Depends(get_superuser),
+    _: CachedUser = Depends(get_superuser),
 ):
     return await service.register(data)
 
@@ -41,7 +41,7 @@ async def list_users(
     offset: int = Query(default=0, ge=0),
     limit: int = Query(default=100, ge=1, le=1000),
     service: UserService = Depends(get_service),
-    _: User = Depends(get_superuser),
+    _: CachedUser = Depends(get_superuser),
 ):
     return await service.get_users(offset=offset, limit=limit)
 
@@ -50,7 +50,7 @@ async def list_users(
 async def get_user(
     user_id: int,
     service: UserService = Depends(get_service),
-    _: User = Depends(get_self_or_superuser),
+    _: CachedUser = Depends(get_self_or_superuser),
 ):
     return await service.get_user(user_id)
 
@@ -60,7 +60,7 @@ async def update_user(
     user_id: int,
     data: UserUpdate,
     service: UserService = Depends(get_service),
-    current_user: User = Depends(get_self_or_superuser),
+    current_user: CachedUser = Depends(get_self_or_superuser),
     session: AsyncSession = Depends(get_db),
 ):
     # Regular users cannot change privileged fields on themselves
@@ -76,7 +76,7 @@ async def update_user(
 async def delete_user(
     user_id: int,
     service: UserService = Depends(get_service),
-    _: User = Depends(get_superuser),
+    _: CachedUser = Depends(get_superuser),
 ):
     await service.delete_user(user_id)
 
@@ -85,7 +85,7 @@ async def delete_user(
 async def get_user_roles(
     user_id: int,
     service: UserService = Depends(get_service),
-    _: User = Depends(get_self_or_superuser),
+    _: CachedUser = Depends(get_self_or_superuser),
 ):
     return await service.get_roles(user_id)
 
@@ -99,6 +99,6 @@ async def assign_role(
     user_id: int,
     data: UserRoleCreate,
     service: UserService = Depends(get_service),
-    _: User = Depends(get_superuser),
+    _: CachedUser = Depends(get_superuser),
 ):
     return await service.assign_role(user_id, data)
